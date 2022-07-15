@@ -78,8 +78,6 @@ const renderStats = (stats: PokemonByNameResponse["stats"]) => {
 export default function Show() {
   const { pokemon } = useLoaderDataTyped<typeof loader>();
 
-  console.log(pokemon);
-
   const pokemonImg =
     pokemon.sprites.versions["generation-v"]["black-white"].animated
       .front_default ?? pokemon.sprites.front_default;
