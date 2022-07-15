@@ -69,7 +69,7 @@ export default function Index() {
                   textTransform: "capitalize",
                 }}
               >
-                <Pokemon name={poke.name} />
+                <Pokemon name={poke.name} url={poke.url} />
               </Card>
             </Grid.Col>
           );
@@ -79,11 +79,11 @@ export default function Index() {
   );
 }
 
-const Pokemon = ({ name }: { name: string }) => {
+const Pokemon = ({ name, url }: { name: string; url: string }) => {
   const [pokemon, setPokemon] = useState<PokemonByNameResponse | null>(null);
   useEffect(() => {
     const fetchPokemon = async () => {
-      const data = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`);
+      const data = await fetch(url);
       const json = await data.json();
       setPokemon(json);
     };
