@@ -145,9 +145,11 @@ export default function Index() {
             </Grid.Col>
           );
         })}
+
+        {/* loading state */}
         {!fetchedPokemon.length && (
           <>
-            {pokemon.map((poke) => (
+            {initialPokemon.map((poke) => (
               <Grid.Col key={poke.name} span={12} lg={2}>
                 <Card
                   sx={{
