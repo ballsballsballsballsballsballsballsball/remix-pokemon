@@ -1,4 +1,5 @@
 import {
+  Affix,
   Button,
   Card,
   Grid,
@@ -7,7 +8,9 @@ import {
   Skeleton,
   Text,
   Title,
+  Transition,
 } from "@mantine/core";
+import { useWindowScroll } from "@mantine/hooks";
 import { Link } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { jsonTyped, useLoaderDataTyped } from "~/utils";
@@ -63,6 +66,7 @@ export async function loader() {
 
 export default function Index() {
   const { pokemon } = useLoaderDataTyped<typeof loader>();
+  const [scroll, scrollTo] = useWindowScroll();
 
   return (
     <div
@@ -106,6 +110,16 @@ export default function Index() {
           );
         })}
       </Grid>
+
+      <Affix position={{ bottom: 20, right: 20 }}>
+        <Transition transition="slide-up" mounted={scroll.y > 0}>
+          {(transitionStyles) => (
+            <Button style={transitionStyles} onClick={() => scrollTo({ y: 0 })}>
+              Scroll to top
+            </Button>
+          )}
+        </Transition>
+      </Affix>
     </div>
   );
 }
