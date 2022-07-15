@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { useWindowScroll } from "@mantine/hooks";
 import { Link } from "@remix-run/react";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { jsonTyped, useLoaderDataTyped } from "~/utils";
 import { renderType } from "./pokemon/$name";
@@ -55,7 +56,7 @@ export type PokemonByNameResponse = {
 };
 
 export async function loader() {
-  const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=2000");
+  const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=54");
 
   const data: PokemonResponse = await response.json();
 
@@ -65,8 +66,27 @@ export async function loader() {
 }
 
 export default function Index() {
-  const { pokemon } = useLoaderDataTyped<typeof loader>();
+  const { pokemon: initialPokemon } = useLoaderDataTyped<typeof loader>();
   const [scroll, scrollTo] = useWindowScroll();
+  const [pokemon, setPokemon] = useState<PokemonResponse["results"]>([]);
+
+  useEffect(() => {
+    setPokemon(initialPokemon);
+  }, [initialPokemon]);
+
+  useEffect(() => {
+    const fetchMore = async () => {
+      const response = await fetch(
+        `https://pokeapi.co/api/v2/pokemon?limit=54&offset=${pokemon.length}`
+      );
+
+      const data: PokemonResponse = await response.json();
+
+      setPokemon([...pokemon, ...data.results]);
+    };
+
+    fetchMore();
+  }, [pokemon]);
 
   return (
     <div
@@ -128,9 +148,9 @@ const Pokemon = ({ name, url }: { name: string; url: string }) => {
   const [pokemon, setPokemon] = useState<PokemonByNameResponse | null>(null);
   useEffect(() => {
     const fetchPokemon = async () => {
-      const data = await fetch(url);
-      const json = await data.json();
-      setPokemon(json);
+      const res = await axios.get(url);
+      const { data } = res;
+      setPokemon(data);
     };
 
     fetchPokemon();
