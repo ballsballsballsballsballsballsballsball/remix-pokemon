@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 import { useWindowScroll } from "@mantine/hooks";
 import { Link } from "@remix-run/react";
-import axios from "axios";
+import axios, { type AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import { jsonTyped, useLoaderDataTyped } from "~/utils";
 import { renderType } from "./pokemon/$name";
@@ -69,15 +69,32 @@ export default function Index() {
   const { pokemon: initialPokemon } = useLoaderDataTyped<typeof loader>();
   const [scroll, scrollTo] = useWindowScroll();
   const [pokemon, setPokemon] = useState<PokemonResponse["results"]>([]);
+  const [fetchedPokemon, setFetchedPokemon] = useState<PokemonByNameResponse[]>(
+    []
+  );
 
   useEffect(() => {
     setPokemon(initialPokemon);
   }, [initialPokemon]);
 
   useEffect(() => {
+    const fetchPokemon = async () => {
+      await axios
+        .all(pokemon.map(async (poke) => axios.get(poke.url)))
+        .then((responses: any) => {
+          setFetchedPokemon(
+            responses.map((response: AxiosResponse) => response.data)
+          );
+        });
+    };
+
+    fetchPokemon();
+  }, [pokemon]);
+
+  useEffect(() => {
     const fetchMore = async () => {
       const response = await fetch(
-        `https://pokeapi.co/api/v2/pokemon?limit=54&offset=${pokemon.length}`
+        `https://pokeapi.co/api/v2/pokemon?limit=200&offset=${pokemon.length}`
       );
 
       const data: PokemonResponse = await response.json();
@@ -102,21 +119,20 @@ export default function Index() {
       <Title>Poke man</Title>
 
       <Grid
-        grow
         sx={{
           width: "80%",
         }}
       >
-        {pokemon.map((poke) => {
+        {fetchedPokemon.map((poke) => {
           return (
-            <Grid.Col key={poke.url} span={12} lg={2}>
+            <Grid.Col key={poke.name} span={12} lg={2}>
               <Card
                 sx={{
                   textAlign: "center",
                   textTransform: "capitalize",
                 }}
               >
-                <Pokemon name={poke.name} url={poke.url} />
+                <PokemonRenderer pokemon={poke} />
                 <Link
                   to={`/pokemon/${poke.name}`}
                   style={{ textDecoration: "none" }}
@@ -129,6 +145,35 @@ export default function Index() {
             </Grid.Col>
           );
         })}
+        {!fetchedPokemon.length && (
+          <>
+            {pokemon.map((poke) => (
+              <Grid.Col key={poke.name} span={12} lg={2}>
+                <Card
+                  sx={{
+                    textAlign: "center",
+                    textTransform: "capitalize",
+                  }}
+                >
+                  <Skeleton height={200} />
+
+                  <Text>{poke.name}</Text>
+
+                  <Skeleton width="100%" height={20} />
+
+                  <Link
+                    to={`/pokemon/${poke.name}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Button fullWidth variant="light" mt={2}>
+                      View
+                    </Button>
+                  </Link>
+                </Card>
+              </Grid.Col>
+            ))}
+          </>
+        )}
       </Grid>
 
       <Affix position={{ bottom: 20, right: 20 }}>
@@ -144,53 +189,29 @@ export default function Index() {
   );
 }
 
-const Pokemon = ({ name, url }: { name: string; url: string }) => {
-  const [pokemon, setPokemon] = useState<PokemonByNameResponse | null>(null);
-  useEffect(() => {
-    const fetchPokemon = async () => {
-      const res = await axios.get(url);
-      const { data } = res;
-      setPokemon(data);
-    };
-
-    fetchPokemon();
-  }, [name, url]);
-
-  //
+const PokemonRenderer = ({ pokemon }: { pokemon: PokemonByNameResponse }) => {
   return (
     <>
-      {pokemon ? (
-        <>
-          {(pokemon.sprites.versions["generation-v"]["black-white"].animated
-            .front_default ??
-            pokemon.sprites.front_default) && (
-            <Image
-              src={
-                pokemon.sprites.versions["generation-v"]["black-white"].animated
-                  .front_default ?? pokemon.sprites.front_default
-              }
-              sx={{
-                imageRendering: "pixelated",
-              }}
-              alt={name}
-              height={200}
-            />
-          )}
-        </>
-      ) : (
-        <Skeleton height={200} />
+      {(pokemon.sprites.versions["generation-v"]["black-white"].animated
+        .front_default ??
+        pokemon.sprites.front_default) && (
+        <Image
+          src={
+            pokemon.sprites.versions["generation-v"]["black-white"].animated
+              .front_default ?? pokemon.sprites.front_default
+          }
+          sx={{
+            imageRendering: "pixelated",
+          }}
+          alt={pokemon.name}
+          height={200}
+        />
       )}
-      <Text>{name}</Text>
+      <Text>{pokemon.name}</Text>
       <Group position="center">
-        {pokemon ? (
-          <>
-            {pokemon?.types.map(({ type }) => {
-              return <div key={type.name}>{renderType(type.name)}</div>;
-            })}
-          </>
-        ) : (
-          <Skeleton width="100%" height={20} />
-        )}
+        {pokemon?.types.map(({ type }) => {
+          return <div key={type.name}>{renderType(type.name)}</div>;
+        })}
       </Group>
     </>
   );
