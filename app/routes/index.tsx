@@ -1,7 +1,17 @@
-import { Card, Grid, Image, Text, Title } from "@mantine/core";
-import { useFetcher } from "@remix-run/react";
+import {
+  Button,
+  Card,
+  Grid,
+  Group,
+  Image,
+  Skeleton,
+  Text,
+  Title,
+} from "@mantine/core";
+import { Link } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { jsonTyped, useLoaderDataTyped } from "~/utils";
+import { renderType } from "./pokemon/$name";
 
 type PokemonResponse = {
   count: number;
@@ -13,7 +23,7 @@ type PokemonResponse = {
   }[];
 };
 
-type PokemonByNameResponse = {
+export type PokemonByNameResponse = {
   sprites: {
     front_default: string;
     versions: {
@@ -26,6 +36,19 @@ type PokemonByNameResponse = {
       };
     };
   };
+  name: string;
+  order: number;
+  types: {
+    type: {
+      name: string;
+    };
+  }[];
+  stats: {
+    base_stat: number;
+    stat: {
+      name: string;
+    };
+  }[];
 };
 
 export async function loader() {
@@ -70,6 +93,14 @@ export default function Index() {
                 }}
               >
                 <Pokemon name={poke.name} url={poke.url} />
+                <Link
+                  to={`/pokemon/${poke.name}`}
+                  style={{ textDecoration: "none" }}
+                >
+                  <Button fullWidth variant="light" mt={2}>
+                    View
+                  </Button>
+                </Link>
               </Card>
             </Grid.Col>
           );
@@ -91,25 +122,42 @@ const Pokemon = ({ name, url }: { name: string; url: string }) => {
     fetchPokemon();
   }, [name, url]);
 
+  //
   return (
     <>
-      {pokemon &&
-        (pokemon.sprites.versions["generation-v"]["black-white"].animated
-          .front_default ??
-          pokemon.sprites.front_default) && (
-          <Image
-            src={
-              pokemon.sprites.versions["generation-v"]["black-white"].animated
-                .front_default ?? pokemon.sprites.front_default
-            }
-            sx={{
-              imageRendering: "pixelated",
-            }}
-            alt={name}
-            height={200}
-          />
-        )}
+      {pokemon ? (
+        <>
+          {(pokemon.sprites.versions["generation-v"]["black-white"].animated
+            .front_default ??
+            pokemon.sprites.front_default) && (
+            <Image
+              src={
+                pokemon.sprites.versions["generation-v"]["black-white"].animated
+                  .front_default ?? pokemon.sprites.front_default
+              }
+              sx={{
+                imageRendering: "pixelated",
+              }}
+              alt={name}
+              height={200}
+            />
+          )}
+        </>
+      ) : (
+        <Skeleton height={200} />
+      )}
       <Text>{name}</Text>
+      <Group position="center">
+        {pokemon ? (
+          <>
+            {pokemon?.types.map(({ type }) => {
+              return <div key={type.name}>{renderType(type.name)}</div>;
+            })}
+          </>
+        ) : (
+          <Skeleton width="100%" height={20} />
+        )}
+      </Group>
     </>
   );
 };
