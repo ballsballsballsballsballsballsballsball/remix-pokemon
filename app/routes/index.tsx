@@ -89,7 +89,7 @@ const Pokemon = ({ name, url }: { name: string; url: string }) => {
     };
 
     fetchPokemon();
-  }, [name]);
+  }, [name, url]);
 
   return (
     <>
